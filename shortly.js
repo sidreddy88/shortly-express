@@ -2,6 +2,8 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var session = require('express-session');
+
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -20,23 +22,13 @@ app.use(partials());
 app.use(bodyParser.json());
 
 app.use(timeout(120000));
-
+app.use(express.cookieParser('shhhh, very secret'));
+app.use(session());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-app.use(express.session());
-
-function restrict(req, res, next) {
-  if (req.session.user) {
-    next();
-  } else {
-    req.session.error = 'Access denied!';
-    res.redirect('/login');
-  }
-}
-
-
+var session;
 
 app.get('/', 
 function(req, res) {
