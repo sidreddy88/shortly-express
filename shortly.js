@@ -12,7 +12,6 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 var timeout = require('connect-timeout');
-var signedIn = false;
 var app = express();
 
 app.set('views', __dirname + '/views');
@@ -31,9 +30,7 @@ app.use(express.static(__dirname + '/public'));
 var session;
 
 function restrict(req, res, next) {
-  console.log("Request Session INside Restrict:" + req.session)
   if (req.session.user) {
-    console.log('INSIDE RESTRICT FUNTION - USERNAME: ' +req.session.user )
     next();
   } else {
     req.session.error = 'Access denied!';
@@ -92,40 +89,29 @@ function(req, res) {
   });
 });
 
-/************************************************************/
-// Write your authentication routes here
-/************************************************************/
  app.post('/login', function(req,res){
 
    var username = req.body.username;
    var password = req.body.password;
 
-   db.knex('users').where('username',username)
-              .then(function(rows){
-                // console.log( "Username:" + rows[0]['username']);
-                // console.log("Password:" + rows[0]['password']);
-                if (!rows[0]) {
-                   res.redirect('/login');
-                } else {
-                console.log("INSIDE DATABASE");
-                var userPassword = rows[0]["password"];
-                if (userPassword === password) {
-                  req.session.regenerate (function() {
-                    req.session.user = username;
-                    console.log("INSIDE POST FUNCTION - USERNAME:" + req.session.user);
-                    res.redirect('/');
-                  })
-                } else {
-                  res.redirect('/login');
-                }
-              }
-                });
-
-
-   // console.log("INSIDE POST REQUEST");
-   // console.log(req.body);
-   // res.send(201, "Hello");
-   //res.render('login');
+   db.knex('users')
+   .where('username',username)
+    .then(function(rows){
+                
+    if (!rows[0]) {
+       res.redirect('/login');
+    } else {
+    var userPassword = rows[0]["password"];
+    if (userPassword === password) {
+      req.session.regenerate (function() {
+        req.session.user = username;
+        res.redirect('/');
+      })
+    } else {
+      res.redirect('/login');
+    }
+  }
+    });
 
  });
 
@@ -139,19 +125,8 @@ function(req, res) {
           'password': password
     }).save().then(function(user){
       console.log("This is the user:" + user);
-      //done();
     });
-
-    // db.knex('users')
-    //       .where('username', username)
-    //       .then(function(rows) {
-    //         console.log("Login Post Res UserName: " + rows[0]['username']);
-    //         console.log("Login Post Res Password: " + rows[0]['password']);
-    //         //done();
-    //         });
    res.redirect('/login');
-   //res.render('login');
-
  });
 
  app.get('/logout', function(req,res){
@@ -182,11 +157,7 @@ function(req, res) {
 /************************************************************/
 
 app.get('/*', function(req, res) {
-  console.log("INSIDE APP ALL");
-  console.log("REQUEST PARAMETRES :" + req.params[0]);
-  console.log("I AM NOT SUPPOSED TO BE HERE");
   new Link({ code: req.params[0] }).fetch().then(function(link) {
-    console.log("CURRENT LINK:" + link);
     if (!link) {
       res.redirect('/');
     } else {
