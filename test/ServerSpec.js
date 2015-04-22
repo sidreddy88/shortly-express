@@ -74,7 +74,7 @@ describe('', function() {
           'uri': 'http://127.0.0.1:4568/login',
           'json': {
             'username': 'Phillip',
-            'password': 'Phillip'
+            'password': 'Game'
           }
         };
         // login via form and save session info
@@ -97,6 +97,7 @@ describe('', function() {
 
       requestWithSession(options, function(error, res, body) {
         // res comes from the request module, and may not follow express conventions
+        console.log(res);
         expect(res.statusCode).to.equal(404);
         done();
       });
@@ -185,7 +186,7 @@ describe('', function() {
         });
       });
 
-      xit('Shortcode redirects to correct url', function(done) {
+      it('Shortcode redirects to correct url', function(done) {
         var options = {
           'method': 'GET',
           'uri': 'http://127.0.0.1:4568/' + link.get('code')
@@ -241,7 +242,7 @@ describe('', function() {
 
   }); // 'Priviledged Access'
 
-  xdescribe('Account Creation:', function(){
+  describe('Account Creation:', function(){
 
     it('Signup creates a user record', function(done) {
       var options = {
@@ -282,14 +283,14 @@ describe('', function() {
       };
 
       request(options, function(error, res, body) {
-        expect(res.headers.location).to.equal('/');
+        expect(res.headers.location).to.equal('/login');
         done();
       });
     });
 
   }); // 'Account Creation'
 
-  xdescribe('Account Login:', function(){
+  describe('Account Login:', function(){
 
     var requestWithSession = request.defaults({jar: true});
 

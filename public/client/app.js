@@ -3,7 +3,8 @@ window.Shortly = Backbone.View.extend({
 
   events: {
     'click li a.index':  'renderIndexView',
-    'click li a.create': 'renderCreateView'
+    'click li a.create': 'renderCreateView',
+   // 'click li a.logout': 'renderLogout'
   },
 
   initialize: function(){
@@ -29,6 +30,20 @@ window.Shortly = Backbone.View.extend({
   renderCreateView: function(e){
     e && e.preventDefault();
     this.router.navigate('/create', { trigger: true });
+  },
+
+  renderLogout: function(e) {
+   //e && e.preventDefault();
+    // $.ajax({
+    //   method: 'GET',
+    //   url: '/logout',
+    //   success: function(data){
+    //     console.log("Logged Out");
+    //   },
+    //   error: function(data){
+    //     console.log("There was an error logging out:" + data);
+    //   }
+    // });
   },
 
   updateNav: function(routeName){

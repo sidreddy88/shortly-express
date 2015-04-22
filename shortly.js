@@ -3,7 +3,7 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var session = require('express-session');
-
+var cookieParser = require('cookie-parser');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -22,7 +22,7 @@ app.use(partials());
 app.use(bodyParser.json());
 
 app.use(timeout(120000));
-app.use(express.cookieParser('shhhh, very secret'));
+app.use(cookieParser('shhhh, very secret'));
 app.use(session());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -30,31 +30,38 @@ app.use(express.static(__dirname + '/public'));
 
 var session;
 
-app.get('/', 
-function(req, res) {
-  if (!signedIn) {
-    res.redirect('/login');
+function restrict(req, res, next) {
+  console.log("Request Session INside Restrict:" + req.session)
+  if (req.session.user) {
+    console.log('INSIDE RESTRICT FUNTION - USERNAME: ' +req.session.user )
+    next();
   } else {
-  res.render('index');
- }
-});
+    req.session.error = 'Access denied!';
+    res.redirect('/login');
+  }
+}
 
-app.get('/create', 
+app.get('/', restrict,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/create', restrict, 
+function(req, res) {
+  res.render('index');
+});
+
+app.get('/links', restrict,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links', restrict,
 function(req, res) {
   var uri = req.body.url;
-
+  console.log(uri);
   if (!util.isValidUrl(uri)) {
     console.log('Not a valid url: ', uri);
     return res.send(404);
@@ -95,17 +102,25 @@ function(req, res) {
 
    db.knex('users').where('username',username)
               .then(function(rows){
-                console.log( "Username:" + rows[0]['username']);
-                console.log("Password:" + rows[0]['password']);
-
+                // console.log( "Username:" + rows[0]['username']);
+                // console.log("Password:" + rows[0]['password']);
+                if (!rows[0]) {
+                   res.redirect('/login');
+                } else {
+                console.log("INSIDE DATABASE");
                 var userPassword = rows[0]["password"];
                 if (userPassword === password) {
-                  signedIn = true;
-                  res.redirect('/');
+                  req.session.regenerate (function() {
+                    req.session.user = username;
+                    console.log("INSIDE POST FUNCTION - USERNAME:" + req.session.user);
+                    res.redirect('/');
+                  })
                 } else {
                   res.redirect('/login');
                 }
+              }
                 });
+
 
    // console.log("INSIDE POST REQUEST");
    // console.log(req.body);
@@ -127,20 +142,28 @@ function(req, res) {
       //done();
     });
 
-    db.knex('users')
-          .where('username', username)
-          .then(function(rows) {
-            console.log("Login Post Res UserName: " + rows[0]['username']);
-            console.log("Login Post Res Password: " + rows[0]['password']);
-            //done();
-            });
+    // db.knex('users')
+    //       .where('username', username)
+    //       .then(function(rows) {
+    //         console.log("Login Post Res UserName: " + rows[0]['username']);
+    //         console.log("Login Post Res Password: " + rows[0]['password']);
+    //         //done();
+    //         });
    res.redirect('/login');
    //res.render('login');
 
  });
 
+ app.get('/logout', function(req,res){
+    req.session.destroy(function(e){
+        if (e) throw e;
+        res.redirect('/login');
+    });
+ });
+
 
  app.get('/login', function(req,res){
+   console.log("INSIDE APP GET /LOGIN")
    res.render('login');
 
  });
@@ -148,6 +171,8 @@ function(req, res) {
    res.render('signup');
 
  });
+
+
 
 
 /************************************************************/
